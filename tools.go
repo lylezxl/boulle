@@ -4,15 +4,16 @@ import (
 	"fmt"
 	"github.com/coreos/etcd/clientv3"
 	"github.com/golang/glog"
+	"math/rand"
 	"net"
 	"time"
 )
 
-func getCurrentTime() string {
+func GetCurrentTime() string {
 	return time.Now().Format("2006-01-02T15:04:05Z07:00")
 }
 
-func newEtcdClient(endpoints []string, username, password string, timeout time.Duration) (*clientv3.Client, error) {
+func NewEtcdClient(endpoints []string, username, password string, timeout time.Duration) (*clientv3.Client, error) {
 	config := clientv3.Config{
 		Endpoints:   endpoints,
 		Username:    username,
@@ -55,6 +56,22 @@ func getNicIp(name string) string {
 	return ""
 }
 
-func etcdKey(prefix, ip string, port int) string {
-	return fmt.Sprintf("%s/%s-%d", prefix, ip, port)
+func etcdKey(prefix, project, ip string, id string) string {
+	return fmt.Sprintf("%s/%s/%s-%s", prefix, project, ip, id)
+}
+
+var r *rand.Rand
+
+func init() {
+	r = rand.New(rand.NewSource(time.Now().Unix()))
+}
+
+// RandString 生成随机字符串
+func RandString(len int) string {
+	bytes := make([]byte, len)
+	for i := 0; i < len; i++ {
+		b := r.Intn(26) + 65
+		bytes[i] = byte(b)
+	}
+	return string(bytes)
 }

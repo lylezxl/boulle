@@ -2,24 +2,27 @@ package boulle
 
 import (
 	"context"
-	"encoding/json"
 	"github.com/coreos/etcd/clientv3"
 	"github.com/golang/glog"
 	jsoniter "github.com/json-iterator/go"
+	"github.com/pkg/errors"
 	"github.com/spf13/viper"
-	"strings"
 	"time"
 )
 
+var (
+	appName = "boulle"
+	config  = Config{}
+)
+
 type New struct {
-	client      *clientv3.Client
-	nic         string
-	port        int
-	metricsPath string
-	key         string
-	ip          string
-	labels      map[string]string
-	interval    int
+	project    string
+	client     *clientv3.Client
+	nic        string
+	key        string
+	ip         string
+	interval   int
+	Prometheus *Prometheus
 }
 
 func (n *New) RegisterTicker(shopCh <-chan struct{}) {
@@ -28,11 +31,11 @@ func (n *New) RegisterTicker(shopCh <-chan struct{}) {
 		select {
 		case <-timeTimer.C:
 			v := Data{
+				Project:        n.project,
 				Nic:            n.nic,
 				Ip:             n.ip,
-				Port:           n.port,
-				MetricsPath:    n.metricsPath,
-				LastUpdateTime: getCurrentTime(),
+				Prometheus:     n.Prometheus,
+				LastUpdateTime: GetCurrentTime(),
 			}
 			data, err := jsoniter.Marshal(v)
 			if err != nil {
@@ -61,62 +64,43 @@ func (n *New) RegisterRemove() error {
 		return nil
 	}
 }
-func Initialization(nics, endpoints []string, username, password, metricsPath, prefix string, timeout, interval, port int, labels map[string]string) (*New, error) {
+func Initialization(project string, nics, endpoints []string, username, password, prefix string, timeout, interval int, enable_prometheus bool, prometheus *Prometheus) (*New, error) {
 	nic, ip := getIp(nics)
 	if nic == "" || ip == "" {
 		return nil, NotIpaddress
 	}
-	c, err := newEtcdClient(endpoints, username, password, time.Duration(timeout)*time.Second)
+	c, err := NewEtcdClient(endpoints, username, password, time.Duration(timeout)*time.Second)
 	if err != nil {
 		return nil, err
 	}
-	if metricsPath == "" {
-		metricsPath = "/metrics"
+
+	n := &New{
+		project:  project,
+		client:   c,
+		nic:      nic,
+		ip:       ip,
+		key:      etcdKey(prefix, project, ip, RandString(10)),
+		interval: interval,
 	}
-	return &New{
-		client:      c,
-		nic:         nic,
-		port:        port,
-		metricsPath: metricsPath,
-		ip:          ip,
-		key:         etcdKey(prefix, ip, port),
-		labels:      labels,
-		interval:    interval,
-	}, nil
+	if enable_prometheus {
+		if prometheus.Metrics == "" {
+			prometheus.Metrics = "/metrics"
+		}
+		n.Prometheus = prometheus
+	}
+	return n, nil
 }
 
 func InitializationWithViper() (*New, error) {
-	nics := strings.Split(viper.GetString("boulle.nic"), ",")
-	metricsPath := viper.GetString("boulle.metricsPath")
-	interval := viper.GetInt("boulle.interval")
-	port := viper.GetInt("boulle.port")
-	labels := viper.GetString("bolle.labels")
-	var m map[string]string
-	if labels != "" {
-		err := json.Unmarshal([]byte(labels), m)
-		if err != nil {
-			glog.V(15).Infof("pasre prometheus label data:%s  error:%s", labels, err)
-		}
-	} else {
-		glog.V(15).Infof("prometheus no label")
-
+	//nics := strings.Split(viper.GetString("boulle.nic"), ",")
+	//metricsPath := viper.GetString("boulle.metricsPath")
+	//interval := viper.GetInt("boulle.interval")
+	//port := viper.GetInt("boulle.port")
+	//labels := viper.GetString("bolle.labels")
+	err := viper.UnmarshalKey("boulle", &config)
+	if err != nil {
+		return nil, errors.New("boulle 获取配置失败")
 	}
-	endpoints := strings.Split(viper.GetString("boulle.etcd.endpoints"), ",")
-	username := viper.GetString("boulle.etcd.username")
-	password := viper.GetString("boulle.etcd.password")
-	prefix := viper.GetString("boulle.etcd.prefix")
-	timeout := viper.GetInt("boulle.etcd.timeout")
-
-	//
-	glog.V(20).Infof("viper config nic:%#v", nics)
-	glog.V(20).Infof("viper config metricsPath:%s", metricsPath)
-	glog.V(20).Infof("viper config labels:%s", labels)
-	glog.V(20).Infof("viper config interval:%d", interval)
-	glog.V(20).Infof("viper config port:%d", port)
-	glog.V(20).Infof("viper config etcd endpoints:%#v", endpoints)
-	glog.V(20).Infof("viper config etcd username:\"%s\"", username)
-	glog.V(20).Infof("viper config etcd prefix:%s", prefix)
-	glog.V(20).Infof("viper config etcd password:\"%s\"", password)
-	glog.V(20).Infof("viper config etcd timeout:%d", timeout)
-	return Initialization(nics, endpoints, username, password, metricsPath, prefix, timeout, interval, port, m)
+	glog.V(20).Infof("%s  config:%#v", appName, config)
+	return Initialization(config.Project, config.Nics, config.Etcd.Endpoints, config.Etcd.Username, config.Etcd.Password, config.Etcd.Prefix, config.Etcd.Timeout, config.Interval, config.Enable_promethues, &config.Prometheus)
 }
