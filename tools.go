@@ -57,6 +57,9 @@ func getNicIp(name string) string {
 }
 
 func etcdKey(prefix, project, ip string, id string) string {
+	if id == "" {
+		id = "TSBPBVHGMC"
+	}
 	return fmt.Sprintf("%s/%s/%s-%s", prefix, project, ip, id)
 }
 

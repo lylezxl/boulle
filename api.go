@@ -48,7 +48,7 @@ func (n *New) RegisterTicker(shopCh <-chan struct{}) {
 					glog.V(10).Infof("put etcd  key:%s value:%s success", n.key, string(data))
 				}
 			}
-			timeTimer.Reset(time.Minute * 1)
+			timeTimer.Reset(time.Duration(n.interval) * time.Second)
 		case <-shopCh:
 			glog.Infof("stop register:%s")
 		}
@@ -79,7 +79,7 @@ func Initialization(project string, nics, endpoints []string, username, password
 		client:   c,
 		nic:      nic,
 		ip:       ip,
-		key:      etcdKey(prefix, project, ip, RandString(10)),
+		key:      etcdKey(prefix, project, ip, viper.GetString("boulle.id")),
 		interval: interval,
 	}
 	if enable_prometheus {
