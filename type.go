@@ -1,6 +1,7 @@
 package boulle
 
 type Data struct {
+	Idc            string      `json:"idc"`
 	Project        string      `json:"project"`
 	Nic            string      `json:"nic"`
 	Ip             string      `json:"ip"`
@@ -11,7 +12,7 @@ type Data struct {
 type Prometheus struct {
 	Metrics string `json:"metrics"`
 	Port    int    `json:"port"`
-	Label   string `json:"label"`
+	Labels  string `json:"labels"`
 }
 type Etcd struct {
 	Endpoints []string `json:"endpoints"`
@@ -21,6 +22,7 @@ type Etcd struct {
 	Timeout   int      `json:"timeout"`
 }
 type Config struct {
+	Idc               string     `json:"idc"`
 	Project           string     `json:"project"`
 	Nics              []string   `json:"nics"`
 	Interval          int        `json:"interval"`

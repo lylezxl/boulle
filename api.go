@@ -16,6 +16,7 @@ var (
 )
 
 type New struct {
+	idc        string
 	project    string
 	client     *clientv3.Client
 	nic        string
@@ -31,6 +32,7 @@ func (n *New) RegisterTicker(shopCh <-chan struct{}) {
 		select {
 		case <-timeTimer.C:
 			v := Data{
+				Idc:            n.idc,
 				Project:        n.project,
 				Nic:            n.nic,
 				Ip:             n.ip,
@@ -50,7 +52,7 @@ func (n *New) RegisterTicker(shopCh <-chan struct{}) {
 			}
 			timeTimer.Reset(time.Duration(n.interval) * time.Second)
 		case <-shopCh:
-			glog.Infof("stop register:%s")
+			glog.Infof("stop register...")
 		}
 	}
 }
@@ -64,7 +66,7 @@ func (n *New) RegisterRemove() error {
 		return nil
 	}
 }
-func Initialization(project string, nics, endpoints []string, username, password, prefix string, timeout, interval int, enable_prometheus bool, prometheus *Prometheus) (*New, error) {
+func Initialization(idc, project string, nics, endpoints []string, username, password, prefix string, timeout, interval int, enable_prometheus bool, prometheus *Prometheus) (*New, error) {
 	nic, ip := getIp(nics)
 	if nic == "" || ip == "" {
 		return nil, NotIpaddress
@@ -75,6 +77,7 @@ func Initialization(project string, nics, endpoints []string, username, password
 	}
 
 	n := &New{
+		idc:      idc,
 		project:  project,
 		client:   c,
 		nic:      nic,
@@ -102,5 +105,5 @@ func InitializationWithViper() (*New, error) {
 		return nil, errors.New("boulle 获取配置失败")
 	}
 	glog.V(20).Infof("%s  config:%#v", appName, config)
-	return Initialization(config.Project, config.Nics, config.Etcd.Endpoints, config.Etcd.Username, config.Etcd.Password, config.Etcd.Prefix, config.Etcd.Timeout, config.Interval, config.Enable_promethues, &config.Prometheus)
+	return Initialization(config.Idc, config.Project, config.Nics, config.Etcd.Endpoints, config.Etcd.Username, config.Etcd.Password, config.Etcd.Prefix, config.Etcd.Timeout, config.Interval, config.Enable_promethues, &config.Prometheus)
 }
