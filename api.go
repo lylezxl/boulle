@@ -27,33 +27,37 @@ type New struct {
 }
 
 func (n *New) RegisterTicker(shopCh <-chan struct{}) {
+	n.Register()
 	timeTimer := time.NewTimer(time.Duration(n.interval) * time.Second)
 	for {
 		select {
 		case <-timeTimer.C:
-			v := Data{
-				Idc:            n.idc,
-				Project:        n.project,
-				Nic:            n.nic,
-				Ip:             n.ip,
-				Prometheus:     n.Prometheus,
-				LastUpdateTime: GetCurrentTime(),
-			}
-			data, err := jsoniter.Marshal(v)
-			if err != nil {
-				glog.Errorf("etcd data %#v json marshal error:%s", v, err.Error())
-			} else {
-				_, err = n.client.Put(context.Background(), n.key, string(data))
-				if err != nil {
-					glog.Errorf("etcd data %s  put error:%s", string(data), err.Error())
-				} else {
-					glog.V(10).Infof("put etcd  key:%s value:%s success", n.key, string(data))
-				}
-			}
+			n.Register()
 			timeTimer.Reset(time.Duration(n.interval) * time.Second)
 		case <-shopCh:
 			glog.Infof("stop register...")
 			return
+		}
+	}
+}
+func (n *New) Register() {
+	v := Data{
+		Idc:            n.idc,
+		Project:        n.project,
+		Nic:            n.nic,
+		Ip:             n.ip,
+		Prometheus:     n.Prometheus,
+		LastUpdateTime: GetCurrentTime(),
+	}
+	data, err := jsoniter.Marshal(v)
+	if err != nil {
+		glog.Errorf("etcd data %#v json marshal error:%s", v, err.Error())
+	} else {
+		_, err = n.client.Put(context.Background(), n.key, string(data))
+		if err != nil {
+			glog.Errorf("etcd data %s  put error:%s", string(data), err.Error())
+		} else {
+			glog.V(10).Infof("put etcd  key:%s value:%s success", n.key, string(data))
 		}
 	}
 }
