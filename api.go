@@ -53,6 +53,7 @@ func (n *New) RegisterTicker(shopCh <-chan struct{}) {
 			timeTimer.Reset(time.Duration(n.interval) * time.Second)
 		case <-shopCh:
 			glog.Infof("stop register...")
+			return
 		}
 	}
 }
