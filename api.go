@@ -41,12 +41,20 @@ func (n *New) RegisterTicker(shopCh <-chan struct{}) {
 	}
 }
 func (n *New) Register() {
+	labels := make(map[string]string)
+	for _, v := range n.Prometheus.Labels {
+		labels[v.Key] = v.Value
+	}
 	v := Data{
-		Idc:            n.idc,
-		Project:        n.project,
-		Nic:            n.nic,
-		Ip:             n.ip,
-		Prometheus:     n.Prometheus,
+		Idc:     n.idc,
+		Project: n.project,
+		Nic:     n.nic,
+		Ip:      n.ip,
+		Prometheus: &P{
+			Metrics: n.Prometheus.Metrics,
+			Port:    n.Prometheus.Port,
+			Labels:  labels,
+		},
 		LastUpdateTime: GetCurrentTime(),
 	}
 	data, err := jsoniter.Marshal(v)

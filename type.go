@@ -1,18 +1,23 @@
 package boulle
 
 type Data struct {
-	Idc            string      `json:"idc"`
-	Project        string      `json:"project"`
-	Nic            string      `json:"nic"`
-	Ip             string      `json:"ip"`
-	Prometheus     *Prometheus `json:"prometheus,omitempty"`
-	LastUpdateTime string      `json:"lastUpdateTime"`
+	Idc            string `json:"idc"`
+	Project        string `json:"project"`
+	Nic            string `json:"nic"`
+	Ip             string `json:"ip"`
+	Prometheus     *P     `json:"prometheus,omitempty"`
+	LastUpdateTime string `json:"lastUpdateTime"`
 }
 
 type Prometheus struct {
-	Metrics string `json:"metrics"`
-	Port    int    `json:"port"`
-	Labels  string `json:"labels"`
+	Metrics string  `json:"metrics"`
+	Port    int     `json:"port"`
+	Labels  []Label `json:"labels"`
+}
+
+type Label struct {
+	Key   string `json:"key"`
+	Value string `json:"value"`
 }
 type Etcd struct {
 	Endpoints []string `json:"endpoints"`
@@ -29,4 +34,10 @@ type Config struct {
 	Enable_promethues bool       `json:"enable_promethues"`
 	Prometheus        Prometheus `json:"prometheus"`
 	Etcd              Etcd       `json:"etcd"`
+}
+
+type P struct {
+	Metrics string            `json:"metrics"`
+	Port    int               `json:"port"`
+	Labels  map[string]string `json:"labels"`
 }
