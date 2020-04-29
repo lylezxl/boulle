@@ -4,7 +4,8 @@ import "time"
 
 type Data struct {
 	Idc            string      `json:"idc"`
-	App            string      `json:"project"`
+	Cir            string      `json:"cir"`
+	App            string      `json:"app"`
 	Ip             string      `json:"ip"`
 	LastUpdateTime time.Time   `json:"lastUpdateTime"`
 	Expand         interface{} `json:"expand,omitempty"`

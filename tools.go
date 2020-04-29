@@ -20,5 +20,5 @@ func EtcdKey(prefix, cir, idc, app, ip string, id string) string {
 	if id == "" {
 		id = "TSBPBVHGMC"
 	}
-	return fmt.Sprintf("%s/%s/%s/%s/%s-%s", prefix, cir, idc, app, ip, id)
+	return fmt.Sprintf("%s/%s/%s/%s/%s-%s", prefix, app, cir, idc, ip, id)
 }

@@ -14,6 +14,7 @@ var (
 
 type Client struct {
 	idc      string
+	cir      string
 	app      string
 	client   *clientv3.Client
 	nic      string
@@ -41,10 +42,13 @@ func (n *Client) RegisterTicker(shopCh <-chan struct{}) {
 func (n *Client) Register() {
 	v := Data{
 		Idc:            n.idc,
+		Cir:            n.cir,
 		App:            n.app,
 		Ip:             n.ip,
 		LastUpdateTime: time.Now(),
-		Expand:         n.Expand,
+	}
+	if n.Expand != nil {
+		v.Expand = n.Expand
 	}
 	data, err := jsoniter.Marshal(v)
 	if err != nil {
@@ -94,6 +98,7 @@ func NewWithEtcdClient(prefix, cir, idc, app, ip, id string, interval int, etcdC
 	error) {
 	n := &Client{
 		idc:      idc,
+		cir:      cir,
 		app:      app,
 		client:   etcdClient,
 		key:      EtcdKey(prefix, cir, idc, app, ip, id),
@@ -101,20 +106,17 @@ func NewWithEtcdClient(prefix, cir, idc, app, ip, id string, interval int, etcdC
 		interval: interval,
 		Expand:   expand,
 	}
+
 	return n, nil
 }
 
-//
-//func InitializationWithViper() (*New, error) {
-//	//nics := strings.Split(viper.GetString("boulle.nic"), ",")
-//	//metricsPath := viper.GetString("boulle.metricsPath")
-//	//interval := viper.GetInt("boulle.interval")
-//	//port := viper.GetInt("boulle.port")
-//	//labels := viper.GetString("bolle.labels")
-//	err := viper.UnmarshalKey("boulle", &config)
-//	if err != nil {
-//		return nil, errors.New("boulle 获取配置失败")
-//	}
-//	glog.V(20).Infof("%s  config:%#v", appName, config)
-//	return Initialization(config.Idc, config.Project, config.Nics, config.Etcd.Endpoints, config.Etcd.Username, config.Etcd.Password, config.Etcd.Prefix, config.Etcd.Timeout, config.Interval)
-//}
+func NewWithConfig(prefix, cir, idc, app, ip, id string, interval int, etcdEndpoints []string, etcdUsername, etcdPassword string, etcdTimeout int, expand interface{}) (*Client,
+	error) {
+
+	client, err := NewEtcdClient(etcdEndpoints, etcdUsername, etcdPassword, time.Duration(etcdTimeout)*time.Second)
+	if err != nil {
+		return &Client{}, err
+	}
+
+	return NewWithEtcdClient(prefix, cir, idc, app, ip, id, interval, client, expand)
+}
